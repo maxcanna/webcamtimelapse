@@ -1,4 +1,4 @@
-# WebCamTimeLapse [![](https://img.shields.io/github/license/maxcanna/webcamtimelapse.svg?maxAge=2592000)](https://github.com/maxcanna/webcamtimelapse/blob/master/LICENSE)
+# WebCamTimeLapse ![](https://img.shields.io/codeship/ebf02f60-54f2-0134-5aad-4e423e130982/master.svg?maxAge=2592000) [![](https://img.shields.io/github/license/maxcanna/webcamtimelapse.svg?maxAge=2592000)](https://github.com/maxcanna/webcamtimelapse/blob/master/LICENSE)
 
 Easily create time-lapse videos from webcam images.
 
