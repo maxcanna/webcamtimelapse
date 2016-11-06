@@ -6,7 +6,9 @@ javac -verbose -cp lib/swt.jar -d bin src/net/luxteam/webcamtimelapse/MainWindow
 
 cd bin
 
-jar cvfe ../WebCamTimeLapse.jar net.luxteam.webcamtimelapse.WebCamTimeLapse .
+jar cvfe ../WebCamTimeLapse-cli.jar net.luxteam.webcamtimelapse.WebCamTimeLapse .
+
+jar cvfm ../WebCamTimeLapse-gui.jar ../MANIFEST.MF .
 
 cd ../
 
