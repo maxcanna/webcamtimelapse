@@ -9,7 +9,9 @@ Easily create time-lapse videos from webcam images.
 
 #### Run
 
-`$ java -jar WebCamTimeLapse.jar`
+##### CLI
+
+`$ java -jar WebCamTimeLapse-cli.jar`
 
 As shown in help there are several options available:
 * `URL` (mandatory) Webcam image URL
@@ -21,6 +23,12 @@ As shown in help there are several options available:
 * `height` Video height
 * `width` Video width
 * `quality` Video quality
+
+##### GUI
+
+`$ java -XstartOnFirstThread -jar WebCamTimeLapse-gui.jar`
+
+![](https://cloud.githubusercontent.com/assets/1881831/20040332/63bf4d30-a455-11e6-9ed9-e817a451616d.png)
 
 ### Source image examples:
 
