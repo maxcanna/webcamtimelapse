@@ -24,7 +24,8 @@ As shown in help there are several options available:
 * `width` Video width
 * `quality` Video quality
 
-##### GUI
+
+##### GUI #####
 
 `$ java -XstartOnFirstThread -jar WebCamTimeLapse-gui.jar`
 
