@@ -1,0 +1,23 @@
+name: CI
+
+on: [push]
+
+jobs:
+  ci:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v1
+    - name: Build and run
+      run: |
+        ./build.sh
+        java -jar WebCamTimeLapse-cli.jar | grep Usage
+    - uses: actions/upload-artifact@master
+      with:
+       name: WebCamTimeLapse-CLI
+       path: WebCamTimeLapse-cli.jar
+    - uses: actions/upload-artifact@master
+      with:
+       name: WebCamTimeLapse-GUI
+       path: WebCamTimeLapse-gui.jar
+
