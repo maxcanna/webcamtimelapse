@@ -33,9 +33,8 @@ As shown in help there are several options available:
 
 ### Source image examples:
 
-* [http://www.hotel-galles-milano-webcam.it/hotel-milano-corso-buenos-aires.jpg](http://www.hotel-galles-milano-webcam.it/hotel-milano-corso-buenos-aires.jpg)
-* [http://www.fashionschool.com/fashion_school.jpg](http://www.fashionschool.com/fashion_school.jpg)
-* [http://wirednewyork.com/webcam/new-york-live.jpg](http://wirednewyork.com/webcam/new-york-live.jpg)
+* [http://ww3.comune.fe.it/webcam/piazza_trento_e_trieste.jpg](http://ww3.comune.fe.it/webcam/piazza_trento_e_trieste.jpg)
+* [http://ww3.comune.fe.it/webcam/piazza_municipale.jpg](http://ww3.comune.fe.it/webcam/piazza_municipale.jpg)
 
 ### Credits
 
