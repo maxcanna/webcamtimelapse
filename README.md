@@ -5,7 +5,7 @@ Easily create time-lapse videos from webcam images.
 ### How do I get set up?
 
 #### Build
-`$ ./build.sh`
+`$ ./gradlew build`
 
 #### Run
 
