@@ -8,9 +8,14 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v4
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
     - name: Build and run
       run: |
-        ./build.sh
+        ./gradlew build
         java -jar WebCamTimeLapse-cli.jar | grep Usage
     - uses: actions/upload-artifact@v4
       with:

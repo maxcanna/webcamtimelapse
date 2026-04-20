@@ -1,0 +1,97 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+def osName = System.getProperty("os.name").toLowerCase()
+def osArch = System.getProperty("os.arch").toLowerCase()
+
+def swtOs = ""
+def swtWs = ""
+def swtArch = "x86_64"
+
+if (osName.contains("mac")) {
+    swtOs = "macosx"
+    swtWs = "cocoa"
+    if (osArch.contains("aarch64") || osArch.contains("arm")) {
+        swtArch = "aarch64"
+    }
+} else if (osName.contains("windows")) {
+    swtOs = "win32"
+    swtWs = "win32"
+} else if (osName.contains("linux")) {
+    swtOs = "linux"
+    swtWs = "gtk"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+    }
+}
+
+dependencies {
+    if (swtOs != "") {
+        def swtArtifactName = "org.eclipse.swt.${swtWs}.${swtOs}.${swtArch}"
+        implementation "org.eclipse.platform:${swtArtifactName}:3.114.100"
+    }
+}
+
+task guiJar(type: Jar) {
+    archiveBaseName.set('WebCamTimeLapse')
+    archiveAppendix.set('gui')
+    archiveVersion.set('')
+    destinationDirectory.set(file("$projectDir"))
+
+    manifest {
+        attributes(
+            'Manifest-Version': '1.0',
+            'Main-Class': 'net.luxteam.webcamtimelapse.MainWindow'
+        )
+    }
+
+    from sourceSets.main.output
+
+    // Create a fat jar to include SWT dependencies
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+task cliJar(type: Jar) {
+    archiveBaseName.set('WebCamTimeLapse')
+    archiveAppendix.set('cli')
+    archiveVersion.set('')
+    destinationDirectory.set(file("$projectDir"))
+
+    manifest {
+        attributes(
+            'Main-Class': 'net.luxteam.webcamtimelapse.WebCamTimeLapse'
+        )
+    }
+
+    from sourceSets.main.output
+
+    // Create a fat jar to include SWT dependencies
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Ensure both jars are built when `build` is run
+assemble.dependsOn(guiJar, cliJar)
+
+// By default gradle's build task will depend on assemble and check.
+// We disable the default jar task as we create our own specialized jars.
+jar {
+    enabled = false
+}
