@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URI;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -344,7 +345,7 @@ public class MainWindow {
 			url = textURL.getText();
 			//if(!url.contains(".jpg") && url.contains(".jpeg")) throw new Exception("Not a jpg image in URL!");
 			//Testo validita' URL e che all'indirizzo ci sia un'img valida
-			img = ImageIO.read(new URL(url));
+			img = ImageIO.read(URI.create(url).toURL());
 			if(img == null) throw new Exception("Not a jpg image in URL!");
 		} catch (Exception e) {
 			MessageBox messagebox = new MessageBox(shlWebcamTimelapse,SWT.ICON_ERROR);
@@ -416,7 +417,7 @@ public class MainWindow {
 		}
 		
 		try{
-			if(img == null) img = ImageIO.read(new URL(url));
+			if(img == null) img = ImageIO.read(URI.create(url).toURL());
 			w = img.getWidth();
 			h = img.getHeight();
 			labelWidthValue.setText(""+w);
@@ -452,7 +453,7 @@ public class MainWindow {
 	
 	private static void addFrame(){
 		try{
-			img = watermark(ImageIO.read(new URL(url)),"WebCamTimeLapse");
+			img = watermark(ImageIO.read(URI.create(url).toURL()),"WebCamTimeLapse");
 			out.writeFrame(img, 1);
 			frameCount++;
 			display.asyncExec(new Runnable(){

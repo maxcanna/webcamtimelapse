@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URI;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -62,22 +63,22 @@ public class WebCamTimeLapse implements Runnable {
 			url = args[0];
 			//if(!url.contains(".jpg") && url.contains(".jpeg")) throw new Exception("Not a jpg image in URL!");
 			//Testo validita' URL e che all'indirizzo ci sia un'img valida
-			img = ImageIO.read(new URL(url));
+			img = ImageIO.read(URI.create(url).toURL());
 			if(img == null) throw new Exception("Not a jpg image in URL!");
 		} catch (Exception e1) {
 			System.out.println("Invalid URL. Exiting...");
 			return;
 		}
 		try{
-			interval = new Integer(args[1]);
+			interval = Integer.valueOf(args[1]);
 		} catch (Exception e1) {
-			interval = new Integer(120);
+			interval = Integer.valueOf(120);
 			System.out.println("Invalid/Missing capture interval. Using "+interval+" seconds");
 		}
 		try{
-			frames = new Integer(args[2]);
+			frames = Integer.parseInt(args[2]);
 		} catch (Exception e1) {
-			frames = new Integer(-1).intValue();
+			frames = -1;
 			System.out.println("Invalid/Missing frames count. Using infinite. Stop using CTRL+C");
 		}
 		try{
@@ -100,25 +101,25 @@ public class WebCamTimeLapse implements Runnable {
 			}
 		}
 		try{
-			fps = new Integer(args[4]).intValue();
+			fps = Integer.parseInt(args[4]);
 		}
 		catch (Exception e){
 			fps = 15;
 			System.out.println("Invalid/Missing FPS. Using "+fps);
 		}
 		try{
-			frameduration = new Integer(args[5]);
+			frameduration = Integer.parseInt(args[5]);
 		} catch (Exception e1) {
 			frameduration = 1;
 			System.out.println("Invalid/Missing frame duration. Using "+(float)frameduration/(float)fps+" seconds");
 		}
 		try{
-			h = new Integer(args[6]).intValue();
-			w = new Integer(args[7]).intValue();
+			h = Integer.parseInt(args[6]);
+			w = Integer.parseInt(args[7]);
 		}
 		catch (Exception e){
 			try{
-				if(img == null) img = ImageIO.read(new URL(url));
+				if(img == null) img = ImageIO.read(URI.create(url).toURL());
 				w = img.getWidth();
 				h = img.getHeight();
 				System.out.println("Invalid/Missing size. Using "+w+"x"+h);
@@ -127,7 +128,7 @@ public class WebCamTimeLapse implements Runnable {
 			catch (IOException e1) { }
 		}
 		try{
-			quality = new Float(args[8]).floatValue();
+			quality = Float.parseFloat(args[8]);
 		}
 		catch (Exception e){
 			quality = 1f;
@@ -189,7 +190,7 @@ public class WebCamTimeLapse implements Runnable {
 	
 	private static void addFrame(){
 		try{
-			img = watermark(ImageIO.read(new URL(url)),"WebCamTimeLapse");
+			img = watermark(ImageIO.read(URI.create(url).toURL()),"WebCamTimeLapse");
 			out.writeFrame(img, frameduration);
 			frameCount++;
 			System.out.print(new Date().toString() + " Frame "+frameCount+" added.");
