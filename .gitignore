@@ -1,2 +1,4 @@
 bin/
 WebCamTimeLapse*
+build/
+.gradle/
