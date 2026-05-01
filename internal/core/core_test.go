@@ -60,7 +60,7 @@ func TestFetchAndSaveFrame_WritesJPEG(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(fc.Cleanup)
 
-	err = fc.FetchAndSaveFrame(context.Background(), srv.URL, 0)
+	_, err = fc.FetchAndSaveFrame(context.Background(), srv.URL, 0)
 	require.NoError(t, err)
 
 	expected := filepath.Join(fc.TempDir, "frame_000000.jpg")
@@ -82,7 +82,7 @@ func TestFetchAndSaveFrame_CancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancelled before request
 
-	err = fc.FetchAndSaveFrame(ctx, srv.URL, 0)
+	_, err = fc.FetchAndSaveFrame(ctx, srv.URL, 0)
 	assert.Error(t, err)
 }
 
@@ -96,7 +96,7 @@ func TestFetchAndSaveFrame_BadStatus(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(fc.Cleanup)
 
-	err = fc.FetchAndSaveFrame(context.Background(), srv.URL, 0)
+	_, err = fc.FetchAndSaveFrame(context.Background(), srv.URL, 0)
 	assert.ErrorContains(t, err, "bad status")
 }
 

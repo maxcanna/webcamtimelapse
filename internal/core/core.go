@@ -66,26 +66,26 @@ func addLabel(img *image.RGBA, text string) {
 
 // FetchAndSaveFrame downloads the image, watermarks it, and saves it to disk.
 // The provided context controls cancellation of the HTTP request.
-func (fc *FrameContext) FetchAndSaveFrame(ctx context.Context, url string, frameIndex int) error {
+func (fc *FrameContext) FetchAndSaveFrame(ctx context.Context, url string, frameIndex int) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
 	resp, err := fc.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to fetch image: %w", err)
+		return "", fmt.Errorf("failed to fetch image: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad status: %s", resp.Status)
+		return "", fmt.Errorf("bad status: %s", resp.Status)
 	}
 
 	// Decode directly from the response body — avoids an extra full-body buffer copy.
 	img, err := jpeg.Decode(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to decode jpeg: %w", err)
+		return "", fmt.Errorf("failed to decode jpeg: %w", err)
 	}
 
 	// Avoid a full pixel copy when the source is already *image.RGBA.
@@ -103,13 +103,13 @@ func (fc *FrameContext) FetchAndSaveFrame(ctx context.Context, url string, frame
 	outFilename := filepath.Join(fc.TempDir, fmt.Sprintf("frame_%06d.jpg", frameIndex))
 	outFile, err := os.Create(outFilename) // #nosec G304
 	if err != nil {
-		return fmt.Errorf("failed to create output file: %w", err)
+		return "", fmt.Errorf("failed to create output file: %w", err)
 	}
 	defer func() { _ = outFile.Close() }()
 
 	if err = jpeg.Encode(outFile, m, &jpeg.Options{Quality: 100}); err != nil {
-		return fmt.Errorf("failed to encode jpeg: %w", err)
+		return "", fmt.Errorf("failed to encode jpeg: %w", err)
 	}
 
-	return nil
+	return outFilename, nil
 }

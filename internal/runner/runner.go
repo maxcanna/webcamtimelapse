@@ -31,7 +31,8 @@ type ProgressEvent struct {
 	Pct int // 0–100
 
 	// EventCapture fields
-	FrameCount int
+	FrameCount  int
+	LatestFrame string
 }
 
 // Config holds all parameters for a time-lapse capture job.
@@ -106,7 +107,8 @@ func RunCapture(
 	defer ticker.Stop()
 
 	// Capture first frame immediately before the first tick.
-	if err := fc.FetchAndSaveFrame(ctx, cfg.URL, frameCount); err != nil {
+	framePath, err := fc.FetchAndSaveFrame(ctx, cfg.URL, frameCount)
+	if err != nil {
 		if ctx.Err() != nil {
 			slog.Info("initial frame capture cancelled")
 		} else {
@@ -115,7 +117,7 @@ func RunCapture(
 		}
 	} else {
 		frameCount++
-		sendEvent(ctx, progress, ProgressEvent{Kind: EventCapture, FrameCount: frameCount})
+		sendEvent(ctx, progress, ProgressEvent{Kind: EventCapture, FrameCount: frameCount, LatestFrame: framePath})
 	}
 
 outer:
@@ -124,7 +126,8 @@ outer:
 		case <-ctx.Done():
 			break outer
 		case <-ticker.C:
-			if err := fc.FetchAndSaveFrame(ctx, cfg.URL, frameCount); err != nil {
+			framePath, err := fc.FetchAndSaveFrame(ctx, cfg.URL, frameCount)
+			if err != nil {
 				if ctx.Err() != nil {
 					slog.Info("frame capture cancelled")
 					break outer
@@ -133,7 +136,7 @@ outer:
 				return fmt.Errorf("error capturing frame: %w", err)
 			}
 			frameCount++
-			sendEvent(ctx, progress, ProgressEvent{Kind: EventCapture, FrameCount: frameCount})
+			sendEvent(ctx, progress, ProgressEvent{Kind: EventCapture, FrameCount: frameCount, LatestFrame: framePath})
 		}
 	}
 

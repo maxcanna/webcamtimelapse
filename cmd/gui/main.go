@@ -10,9 +10,9 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
 	"go.massi.dev/webcamtimelapse/internal/runner"
@@ -184,7 +184,7 @@ func main() {
 	w.SetMainMenu(fyne.NewMainMenu(
 		fyne.NewMenu("WebCamTimeLapse"),
 	))
-	w.Resize(fyne.NewSize(600, 400))
+	w.Resize(fyne.NewSize(600, 650))
 
 	urlEntry := widget.NewEntry()
 	urlEntry.SetPlaceHolder("http://...")
@@ -198,7 +198,7 @@ func main() {
 	fpsEntry := widget.NewEntry()
 	fpsEntry.SetText("30")
 
-	calcBtn := widget.NewButton("Calc", func() {
+	calcBtn := widget.NewButton("Calculator", func() {
 		showCalculatorDialog(w, intervalEntry, fpsEntry, framesEntry)
 	})
 
@@ -242,6 +242,11 @@ func main() {
 	progressBar.Hide()
 	infiniteBar := widget.NewProgressBarInfinite()
 	infiniteBar.Hide()
+
+	previewImage := canvas.NewImageFromFile("")
+	previewImage.FillMode = canvas.ImageFillContain
+	previewImage.SetMinSize(fyne.NewSize(320, 180))
+	previewCard := widget.NewCard("Preview", "Latest Captured Frame", previewImage)
 
 	// isRunning is written from both the UI and capture goroutines.
 	var isRunning atomic.Bool
@@ -334,10 +339,14 @@ func main() {
 					if frames > 0 {
 						progressBar.SetValue(float64(ev.FrameCount) / float64(frames))
 					}
+					if ev.LatestFrame != "" {
+						previewImage.File = ev.LatestFrame
+						previewImage.Refresh()
+					}
 				})
 			case runner.EventCompile:
 				fyne.Do(func() {
-					statusLabel.SetText("Compiling video...")
+					statusLabel.SetText("Encoding video...")
 					startBtn.Disable()
 					progressBar.Hide()
 					infiniteBar.Show()
@@ -369,15 +378,24 @@ func main() {
 		}()
 	}
 
-	w.SetContent(container.NewVBox(
+	forms := container.NewVBox(
 		widget.NewLabelWithStyle("Input", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		inputForm,
 		widget.NewSeparator(),
 		widget.NewLabelWithStyle("Output", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		outputForm,
-		layout.NewSpacer(),
 		widget.NewSeparator(),
-		container.NewBorder(nil, nil, startBtn, nil, container.NewVBox(statusLabel, progressBar, infiniteBar)),
+	)
+
+	w.SetContent(container.NewBorder(
+		forms,
+		container.NewVBox(
+			widget.NewSeparator(),
+			container.NewBorder(nil, nil, startBtn, nil, container.NewVBox(statusLabel, progressBar, infiniteBar)),
+		),
+		nil,
+		nil,
+		previewCard,
 	))
 	w.ShowAndRun()
 }
