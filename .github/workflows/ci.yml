@@ -1,27 +1,99 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches-ignore:
+      - master
 
 jobs:
-  ci:
+  fixups:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
       uses: actions/checkout@v4
-    - name: Set up JDK
-      uses: actions/setup-java@v5
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-    - name: Build and run
+    - name: Check if there are fixup commits
+      run: git log --pretty=format:%s origin/master.. | xargs | grep -v fixup
+
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check version bump
+        run: |
+          OLD_VERSION=$(git show origin/master:VERSION) || OLD_VERSION="0.0.0"
+          NEW_VERSION=$(cat VERSION)
+          if [ "$(printf '%s\n' "$OLD_VERSION" "$NEW_VERSION" | sort -V | head -n1)" = "$OLD_VERSION" ] && [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
+            echo "Version increased from $OLD_VERSION to $NEW_VERSION."
+          else
+            echo "Error: Version must be greater than $OLD_VERSION, but it is $NEW_VERSION."
+            exit 1
+          fi
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+    - name: Install dependencies
       run: |
-        ./gradlew build
-        java -jar WebCamTimeLapse-cli.jar | grep Usage
-    - uses: actions/upload-artifact@v4
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev xorg-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxxf86vm-dev
+    - name: Setup Go
+      uses: actions/setup-go@v5
       with:
-       name: WebCamTimeLapse-CLI
-       path: WebCamTimeLapse-cli.jar
-    - uses: actions/upload-artifact@v4
+        go-version: '1.26.2'
+        cache: false
+    - name: Lint
+      uses: golangci/golangci-lint-action@v9
       with:
-       name: WebCamTimeLapse-GUI
-       path: WebCamTimeLapse-gui.jar
+        version: latest
+        args: --timeout=5m
+    - name: Install Gosec
+      run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+    - name: Gosec
+      run: gosec ./...
+    - name: Tests
+      run: go test -v ./...
+
+  build:
+    needs: test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.26.2'
+        cache: false
+    - name: Install Linux dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev xorg-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxxf86vm-dev
+    - name: Build CLI
+      run: go build -o webcamtimelapse-cli-${{ matrix.os }} ./cmd/cli
+    - name: Verify CLI video generation
+      run: |
+        ./webcamtimelapse-cli-${{ matrix.os }} -url https://httpbin.org/image/jpeg -frames 1 -interval 1 -filename test.mp4
+        file test.mp4 | grep -i "MP4"
+    - name: Build GUI
+      run: go build -o webcamtimelapse-gui-${{ matrix.os }} ./cmd/gui
+    - name: Adhoc sign on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        codesign --force --deep -s - webcamtimelapse-cli-${{ matrix.os }} || true
+        codesign --force --deep -s - webcamtimelapse-gui-${{ matrix.os }} || true
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: webcamtimelapse-${{ matrix.os }}
+        path: |
+          webcamtimelapse-cli-*
+          webcamtimelapse-gui-*

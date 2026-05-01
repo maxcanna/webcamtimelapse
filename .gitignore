@@ -1,4 +1,7 @@
-bin/
-WebCamTimeLapse*
-build/
-.gradle/
+webcamtimelapse-cli
+webcamtimelapse-cli-*
+webcamtimelapse-gui
+webcamtimelapse-gui-*
+output_*.mp4
+/ffmpeg
+/ffmpeg.exe
