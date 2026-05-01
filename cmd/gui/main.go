@@ -198,7 +198,7 @@ func main() {
 	fpsEntry := widget.NewEntry()
 	fpsEntry.SetText("30")
 
-	calcBtn := widget.NewButton("Calc", func() {
+	calcBtn := widget.NewButton("Calculator", func() {
 		showCalculatorDialog(w, intervalEntry, fpsEntry, framesEntry)
 	})
 
@@ -346,7 +346,7 @@ func main() {
 				})
 			case runner.EventCompile:
 				fyne.Do(func() {
-					statusLabel.SetText("Compiling video...")
+					statusLabel.SetText("Encoding video...")
 					startBtn.Disable()
 					progressBar.Hide()
 					infiniteBar.Show()
