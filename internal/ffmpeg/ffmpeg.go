@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // SetupProgress reports the download/setup progress of the ffmpeg binary.
@@ -131,6 +132,12 @@ func downloadFFmpeg(ctx context.Context, destPath string, progress chan<- SetupP
 	return downloadAndExtractZip(ctx, url, destPath, progress)
 }
 
+const downloadTimeout = 5 * time.Minute
+
+var httpClient = &http.Client{
+	Timeout: downloadTimeout,
+}
+
 // PassThruReader wraps an io.Reader and reports download progress via a channel.
 type PassThruReader struct {
 	io.Reader
@@ -155,7 +162,7 @@ func downloadAndExtractZip(ctx context.Context, url string, destPath string, pro
 	if err != nil {
 		return fmt.Errorf("failed to build request: %w", err)
 	}
-	resp, err := http.DefaultClient.Do(req) // #nosec G107
+	resp, err := httpClient.Do(req) // #nosec G107
 	if err != nil {
 		return fmt.Errorf("failed to download: %w", err)
 	}
