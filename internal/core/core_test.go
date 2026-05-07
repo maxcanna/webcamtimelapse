@@ -100,6 +100,21 @@ func TestFetchAndSaveFrame_BadStatus(t *testing.T) {
 	assert.ErrorContains(t, err, "bad status")
 }
 
+func TestFetchAndSaveFrame_InvalidJPEG(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("not a jpeg"))
+	}))
+	t.Cleanup(srv.Close)
+
+	fc, err := core.NewFrameContext()
+	require.NoError(t, err)
+	t.Cleanup(fc.Cleanup)
+
+	_, err = fc.FetchAndSaveFrame(context.Background(), srv.URL, 0)
+	assert.ErrorContains(t, err, "failed to decode jpeg")
+}
+
 // minimalJPEG returns bytes of a valid 1×1 white JPEG image.
 func minimalJPEG() []byte {
 	img := image.NewNRGBA(image.Rect(0, 0, 1, 1))
