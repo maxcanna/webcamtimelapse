@@ -20,8 +20,9 @@ import (
 
 // FrameContext holds the state for a time-lapse capture session.
 type FrameContext struct {
-	TempDir string
-	client  *http.Client // shared across frames for connection pooling
+	TempDir  string
+	client   *http.Client // shared across frames for connection pooling
+	labelSrc image.Image  // uniform image reused across frames
 }
 
 // NewFrameContext creates a temporary directory for frames and a reusable HTTP client.
@@ -31,8 +32,9 @@ func NewFrameContext() (*FrameContext, error) {
 		return nil, err
 	}
 	fc := &FrameContext{
-		TempDir: tmpDir,
-		client:  &http.Client{Timeout: 10 * time.Second},
+		TempDir:  tmpDir,
+		client:   &http.Client{Timeout: 10 * time.Second},
+		labelSrc: image.NewUniform(color.RGBA{R: 255, A: 255}),
 	}
 	// Safety net: if Cleanup() is never called (e.g. panic path), the GC will
 	// still remove the temp directory. runtime.AddCleanup is the Go 1.24+
@@ -53,11 +55,10 @@ func (fc *FrameContext) Cleanup() {
 }
 
 // addLabel draws a red watermark onto the image.
-func addLabel(img *image.RGBA, text string) {
-	col := color.RGBA{R: 255, A: 255}
+func (fc *FrameContext) addLabel(img *image.RGBA, text string) {
 	d := &font.Drawer{
 		Dst:  img,
-		Src:  image.NewUniform(col),
+		Src:  fc.labelSrc,
 		Face: basicfont.Face7x13,
 		Dot:  fixed.Point26_6{X: fixed.I(10), Y: fixed.I(30)},
 	}
@@ -98,7 +99,7 @@ func (fc *FrameContext) FetchAndSaveFrame(ctx context.Context, url string, frame
 		draw.Draw(m, bounds, img, image.Point{}, draw.Src)
 	}
 
-	addLabel(m, "WebCamTimeLapse")
+	fc.addLabel(m, "WebCamTimeLapse")
 
 	outFilename := filepath.Join(fc.TempDir, fmt.Sprintf("frame_%06d.jpg", frameIndex))
 	outFile, err := os.Create(outFilename) // #nosec G304
