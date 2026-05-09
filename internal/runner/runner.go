@@ -67,7 +67,9 @@ func RunCapture(
 	cfg Config,
 	progress func(ProgressEvent),
 ) error {
-
+	if cfg.Interval <= 0 {
+		return fmt.Errorf("interval must be greater than 0")
+	}
 
 	// Run EnsureFFmpeg in a goroutine and forward its SetupProgress events.
 	setupCh := make(chan ffmpeg.SetupProgress, 10)
