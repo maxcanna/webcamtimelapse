@@ -18,11 +18,18 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
+// HTTPClient represents an HTTP client used to perform requests.
+//
+//go:generate go tool mockery --name=HTTPClient --output=mocks --outpkg=mocks --filename=httpclient.go
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 // FrameContext holds the state for a time-lapse capture session.
 type FrameContext struct {
 	TempDir  string
-	client   *http.Client // shared across frames for connection pooling
-	labelSrc image.Image  // uniform image reused across frames
+	client   HTTPClient  // shared across frames for connection pooling
+	labelSrc image.Image // uniform image reused across frames
 }
 
 // NewFrameContext creates a temporary directory for frames and a reusable HTTP client.
@@ -45,6 +52,13 @@ func NewFrameContext() (*FrameContext, error) {
 		}
 	}, tmpDir)
 	return fc, nil
+}
+
+func (fc *FrameContext) WithClient(client HTTPClient) *FrameContext {
+	if client != nil {
+		fc.client = client
+	}
+	return fc
 }
 
 // Cleanup removes the temporary directory and all files.

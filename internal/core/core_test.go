@@ -3,116 +3,181 @@ package core_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"image"
 	"image/color"
 	"image/jpeg"
+	"io"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 
 	"go.massi.dev/webcamtimelapse/internal/core"
+	"go.massi.dev/webcamtimelapse/internal/core/mocks"
 )
 
-func TestNewFrameContext_CreatesTempDir(t *testing.T) {
-	fc, err := core.NewFrameContext()
-	require.NoError(t, err)
-	require.NotNil(t, fc)
-
-	assert.DirExists(t, fc.TempDir)
-	t.Cleanup(fc.Cleanup)
+type CoreTestSuite struct {
+	suite.Suite
 }
 
-func TestFrameContext_Cleanup_RemovesDir(t *testing.T) {
+func (s *CoreTestSuite) SetupTest() {
+}
+
+func (s *CoreTestSuite) TestNewFrameContext_CreatesTempDir() {
 	fc, err := core.NewFrameContext()
-	require.NoError(t, err)
+	s.Require().NoError(err)
+	s.Require().NotNil(fc)
+
+	s.Assert().DirExists(fc.TempDir)
+	fc.Cleanup()
+}
+
+func (s *CoreTestSuite) TestFrameContext_Cleanup_RemovesDir() {
+	fc, err := core.NewFrameContext()
+	s.Require().NoError(err)
 
 	dir := fc.TempDir
 	fc.Cleanup()
 
-	assert.NoDirExists(t, dir)
+	s.Assert().NoDirExists(dir)
 }
 
-func TestFrameContext_Cleanup_Idempotent(t *testing.T) {
+func (s *CoreTestSuite) TestFrameContext_Cleanup_Idempotent() {
 	fc, err := core.NewFrameContext()
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	assert.NotPanics(t, func() {
+	s.Assert().NotPanics(func() {
 		fc.Cleanup()
 		fc.Cleanup() // second call must not panic
 	})
 }
 
-func TestFetchAndSaveFrame_WritesJPEG(t *testing.T) {
+func (s *CoreTestSuite) TestFetchAndSaveFrame_WritesJPEG() {
+	client := mocks.NewHTTPClient(s.T())
+
 	// Serve a minimal valid JPEG (1×1 white pixel).
 	jpegData := minimalJPEG()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "image/jpeg")
-		_, _ = w.Write(jpegData)
-	}))
-	t.Cleanup(srv.Close)
+
+	client.On("Do", mock.Anything).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewReader(jpegData)),
+	}, nil)
 
 	fc, err := core.NewFrameContext()
-	require.NoError(t, err)
-	t.Cleanup(fc.Cleanup)
+	s.Require().NoError(err)
+	fc = fc.WithClient(client)
+	defer fc.Cleanup()
 
-	_, err = fc.FetchAndSaveFrame(context.Background(), srv.URL, 0)
-	require.NoError(t, err)
+	_, err = fc.FetchAndSaveFrame(context.Background(), "http://example.com/image.jpg", 0)
+	s.Require().NoError(err)
 
 	expected := filepath.Join(fc.TempDir, "frame_000000.jpg")
 	info, err := os.Stat(expected)
-	require.NoError(t, err)
-	assert.Greater(t, info.Size(), int64(0))
+	s.Require().NoError(err)
+	s.Assert().Greater(info.Size(), int64(0))
 }
 
-func TestFetchAndSaveFrame_CancelledContext(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write(minimalJPEG())
-	}))
-	t.Cleanup(srv.Close)
+func (s *CoreTestSuite) TestFetchAndSaveFrame_RequestError() {
+	client := mocks.NewHTTPClient(s.T())
+
+	client.On("Do", mock.Anything).Return((*http.Response)(nil), errors.New("request error"))
 
 	fc, err := core.NewFrameContext()
-	require.NoError(t, err)
-	t.Cleanup(fc.Cleanup)
+	s.Require().NoError(err)
+	fc = fc.WithClient(client)
+	defer fc.Cleanup()
+
+	_, err = fc.FetchAndSaveFrame(context.Background(), "http://example.com/image.jpg", 0)
+	s.Assert().ErrorContains(err, "failed to fetch image: request error")
+}
+
+func (s *CoreTestSuite) TestFetchAndSaveFrame_BadStatus() {
+	client := mocks.NewHTTPClient(s.T())
+
+	client.On("Do", mock.Anything).Return(&http.Response{
+		StatusCode: http.StatusNotFound,
+		Body:       io.NopCloser(bytes.NewReader([]byte{})),
+	}, nil)
+
+	fc, err := core.NewFrameContext()
+	s.Require().NoError(err)
+	fc = fc.WithClient(client)
+	defer fc.Cleanup()
+
+	_, err = fc.FetchAndSaveFrame(context.Background(), "http://example.com/image.jpg", 0)
+	s.Assert().ErrorContains(err, "bad status")
+}
+
+func (s *CoreTestSuite) TestFetchAndSaveFrame_InvalidJPEG() {
+	client := mocks.NewHTTPClient(s.T())
+
+	client.On("Do", mock.Anything).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewReader([]byte("not a jpeg"))),
+	}, nil)
+
+	fc, err := core.NewFrameContext()
+	s.Require().NoError(err)
+	fc = fc.WithClient(client)
+	defer fc.Cleanup()
+
+	_, err = fc.FetchAndSaveFrame(context.Background(), "http://example.com/image.jpg", 0)
+	s.Assert().ErrorContains(err, "failed to decode jpeg")
+}
+
+func (s *CoreTestSuite) TestFetchAndSaveFrame_ContextError() {
+	client := mocks.NewHTTPClient(s.T())
+
+	client.On("Do", mock.Anything).Return((*http.Response)(nil), context.Canceled)
+
+	fc, err := core.NewFrameContext()
+	s.Require().NoError(err)
+	fc = fc.WithClient(client)
+	defer fc.Cleanup()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // cancelled before request
+	cancel() // Cancel before request
 
-	_, err = fc.FetchAndSaveFrame(ctx, srv.URL, 0)
-	assert.Error(t, err)
+	_, err = fc.FetchAndSaveFrame(ctx, "http://example.com/image.jpg", 0)
+	s.Assert().ErrorContains(err, "failed to fetch image: context canceled")
 }
 
-func TestFetchAndSaveFrame_BadStatus(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	t.Cleanup(srv.Close)
-
+func (s *CoreTestSuite) TestFetchAndSaveFrame_RequestCreationError() {
+	// A mock client is not used because NewRequestWithContext fails first.
 	fc, err := core.NewFrameContext()
-	require.NoError(t, err)
-	t.Cleanup(fc.Cleanup)
+	s.Require().NoError(err)
+	defer fc.Cleanup()
 
-	_, err = fc.FetchAndSaveFrame(context.Background(), srv.URL, 0)
-	assert.ErrorContains(t, err, "bad status")
+	_, err = fc.FetchAndSaveFrame(context.Background(), "://invalid-url", 0) // Invalid URL causes NewRequest to fail
+	s.Assert().ErrorContains(err, "failed to create request: parse")
 }
 
-func TestFetchAndSaveFrame_InvalidJPEG(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "image/jpeg")
-		_, _ = w.Write([]byte("not a jpeg"))
-	}))
-	t.Cleanup(srv.Close)
+func (s *CoreTestSuite) TestFetchAndSaveFrame_OutputFileCreationError() {
+	client := mocks.NewHTTPClient(s.T())
+
+	// Serve a minimal valid JPEG (1×1 white pixel).
+	jpegData := minimalJPEG()
+
+	client.On("Do", mock.Anything).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewReader(jpegData)),
+	}, nil)
 
 	fc, err := core.NewFrameContext()
-	require.NoError(t, err)
-	t.Cleanup(fc.Cleanup)
+	s.Require().NoError(err)
+	fc = fc.WithClient(client)
+	defer fc.Cleanup()
 
-	_, err = fc.FetchAndSaveFrame(context.Background(), srv.URL, 0)
-	assert.ErrorContains(t, err, "failed to decode jpeg")
+	// Induce a file creation error by destroying the destination directory
+	err = os.RemoveAll(fc.TempDir)
+	s.Require().NoError(err)
+
+	_, err = fc.FetchAndSaveFrame(context.Background(), "http://example.com/image.jpg", 0)
+	s.Assert().ErrorContains(err, "failed to create output file: open")
 }
 
 // minimalJPEG returns bytes of a valid 1×1 white JPEG image.
@@ -124,4 +189,8 @@ func minimalJPEG() []byte {
 		panic("minimalJPEG: " + err.Error())
 	}
 	return buf.Bytes()
+}
+
+func TestCoreTestSuite(t *testing.T) {
+	suite.Run(t, new(CoreTestSuite))
 }

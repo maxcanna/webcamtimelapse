@@ -1,46 +1,68 @@
 package runner_test
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	"go.massi.dev/webcamtimelapse/internal/runner"
 )
 
-func TestDefaultOutputFilename_Format(t *testing.T) {
+type RunnerTestSuite struct {
+	suite.Suite
+}
+
+func (s *RunnerTestSuite) SetupTest() {
+}
+
+func (s *RunnerTestSuite) TestDefaultOutputFilename_Format() {
 	before := time.Now().Unix()
 	name := runner.DefaultOutputFilename()
 	after := time.Now().Unix()
 
-	assert.True(t, strings.HasPrefix(name, "output_"), "expected output_ prefix, got: %s", name)
-	assert.True(t, strings.HasSuffix(name, ".mp4"), "expected .mp4 suffix, got: %s", name)
+	s.Assert().True(strings.HasPrefix(name, "output_"), "expected output_ prefix, got: %s", name)
+	s.Assert().True(strings.HasSuffix(name, ".mp4"), "expected .mp4 suffix, got: %s", name)
 
 	// The embedded timestamp must be within the test window.
 	var ts int64
 	_, err := fmt.Sscanf(name, "output_%d.mp4", &ts)
-	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, ts, before)
-	assert.LessOrEqual(t, ts, after)
+	s.Assert().NoError(err)
+	s.Assert().GreaterOrEqual(ts, before)
+	s.Assert().LessOrEqual(ts, after)
 }
 
-func TestDefaultOutputFilename_Unique(t *testing.T) {
+func (s *RunnerTestSuite) TestDefaultOutputFilename_Unique() {
 	// Two calls in the same second return the same name — that's acceptable;
 	// what must NOT happen is a panic or empty string.
 	name := runner.DefaultOutputFilename()
-	assert.NotEmpty(t, name)
+	s.Assert().NotEmpty(name)
 }
 
-func TestProgressEventKinds(t *testing.T) {
+func (s *RunnerTestSuite) TestProgressEventKinds() {
 	setup := runner.ProgressEvent{Kind: runner.EventSetup, Msg: "Downloading", Pct: 42}
-	assert.Equal(t, runner.EventSetup, setup.Kind)
-	assert.Equal(t, "Downloading", setup.Msg)
-	assert.Equal(t, 42, setup.Pct)
+	s.Assert().Equal(runner.EventSetup, setup.Kind)
+	s.Assert().Equal("Downloading", setup.Msg)
+	s.Assert().Equal(42, setup.Pct)
 
 	capture := runner.ProgressEvent{Kind: runner.EventCapture, FrameCount: 7}
-	assert.Equal(t, runner.EventCapture, capture.Kind)
-	assert.Equal(t, 7, capture.FrameCount)
+	s.Assert().Equal(runner.EventCapture, capture.Kind)
+	s.Assert().Equal(7, capture.FrameCount)
+}
+
+func (s *RunnerTestSuite) TestRunCapture_ZeroIntervalError() {
+	err := runner.RunCapture(context.Background(), runner.Config{Interval: 0}, nil)
+	s.Assert().ErrorContains(err, "interval must be greater than 0")
+}
+
+func (s *RunnerTestSuite) TestRunCapture_NegativeIntervalError() {
+	err := runner.RunCapture(context.Background(), runner.Config{Interval: -1}, nil)
+	s.Assert().ErrorContains(err, "interval must be greater than 0")
+}
+
+func TestRunnerTestSuite(t *testing.T) {
+	suite.Run(t, new(RunnerTestSuite))
 }
