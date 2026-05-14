@@ -147,6 +147,7 @@ type PassThruReader struct {
 	progress chan<- SetupProgress
 	total    int64
 	current  int64
+	lastPct  int
 }
 
 func (pt *PassThruReader) Read(p []byte) (int, error) {
@@ -154,7 +155,10 @@ func (pt *PassThruReader) Read(p []byte) (int, error) {
 	pt.current += int64(n)
 	if pt.progress != nil && pt.total > 0 {
 		pct := int((float64(pt.current) / float64(pt.total)) * 100)
-		sendProgress(pt.ctx, pt.progress, SetupProgress{Msg: "Downloading...", Pct: pct})
+		if pct != pt.lastPct || pt.current == pt.total {
+			pt.lastPct = pct
+			sendProgress(pt.ctx, pt.progress, SetupProgress{Msg: "Downloading...", Pct: pct})
+		}
 	}
 	return n, err
 }
@@ -195,6 +199,7 @@ func downloadAndExtractZip(ctx context.Context, url string, destPath string, pro
 		ctx:      ctx,
 		progress: progress,
 		total:    resp.ContentLength,
+		lastPct:  -1,
 	}
 	if _, err = io.Copy(tmpZipFile, reader); err != nil {
 		return fmt.Errorf("failed to write download: %w", err)
