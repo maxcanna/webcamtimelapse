@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"image/draw"
 	"image/jpeg"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -88,10 +89,16 @@ func (fc *FrameContext) FetchAndSaveFrame(ctx context.Context, url string, frame
 	}
 
 	resp, err := fc.client.Do(req)
+	if resp != nil {
+		defer func() {
+			if cerr := resp.Body.Close(); cerr != nil {
+				slog.Warn("failed to close response body", "err", cerr)
+			}
+		}()
+	}
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch image: %w", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("bad status: %s", resp.Status)
