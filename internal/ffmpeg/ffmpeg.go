@@ -165,10 +165,16 @@ func downloadAndExtractZip(ctx context.Context, url string, destPath string, pro
 		return fmt.Errorf("failed to build request: %w", err)
 	}
 	resp, err := httpClient.Do(req) // #nosec G107
+	if resp != nil {
+		defer func() {
+			if cerr := resp.Body.Close(); cerr != nil {
+				slog.Warn("failed to close response body", "err", cerr)
+			}
+		}()
+	}
 	if err != nil {
 		return fmt.Errorf("failed to download: %w", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("bad status code: %d", resp.StatusCode)
