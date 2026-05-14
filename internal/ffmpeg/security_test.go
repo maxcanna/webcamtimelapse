@@ -64,7 +64,7 @@ func TestDownloadAndExtractZip_Security(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 	destPath := filepath.Join(tempDir, "ffmpeg")
 
 	err = downloadAndExtractZip(context.Background(), ts.URL, destPath, nil)
