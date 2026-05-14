@@ -138,6 +138,8 @@ var httpClient = &http.Client{
 	Timeout: downloadTimeout,
 }
 
+const maxFFmpegSize = 500 * 1024 * 1024 // 500 MB limit for decompression bomb protection
+
 // PassThruReader wraps an io.Reader and reports download progress via a channel.
 type PassThruReader struct {
 	io.Reader
@@ -203,26 +205,31 @@ func downloadAndExtractZip(ctx context.Context, url string, destPath string, pro
 
 	for _, f := range r.File {
 		if strings.Contains(f.Name, "ffmpeg") {
+			if f.FileInfo().IsDir() {
+				continue
+			}
+			if f.UncompressedSize64 > uint64(maxFFmpegSize) {
+				return fmt.Errorf("zip entry too large: %d bytes (limit: %d)", f.UncompressedSize64, maxFFmpegSize)
+			}
+
 			rc, err := f.Open()
 			if err != nil {
 				return fmt.Errorf("failed to open zip entry: %w", err)
 			}
+			defer func() { _ = rc.Close() }()
+
 			dest, err := os.Create(destPath) // #nosec G304
 			if err != nil {
-				_ = rc.Close()
 				return fmt.Errorf("failed to create destination file: %w", err)
 			}
-			_, copyErr := io.Copy(dest, rc) // #nosec G110
+
+			_, copyErr := io.Copy(dest, io.LimitReader(rc, maxFFmpegSize)) // #nosec G110
 			closeDestErr := dest.Close()
-			closeRcErr := rc.Close()
 			if copyErr != nil {
 				return fmt.Errorf("failed to extract: %w", copyErr)
 			}
 			if closeDestErr != nil {
 				return fmt.Errorf("failed to close destination file: %w", closeDestErr)
-			}
-			if closeRcErr != nil {
-				return fmt.Errorf("failed to close zip entry: %w", closeRcErr)
 			}
 			return nil
 		}
