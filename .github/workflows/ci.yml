@@ -81,7 +81,7 @@ jobs:
       run: go build -o webcamtimelapse-cli-${{ matrix.os }} ./cmd/cli
     - name: Verify CLI video generation
       run: |
-        ./webcamtimelapse-cli-${{ matrix.os }} -url https://httpbin.org/image/jpeg -frames 1 -interval 1 -filename test.mp4
+        ./webcamtimelapse-cli-${{ matrix.os }} -url https://picsum.photos/200/300 -frames 1 -interval 1 -filename test.mp4
         file test.mp4 | grep -i "MP4"
     - name: Build GUI
       run: go build -o webcamtimelapse-gui-${{ matrix.os }} ./cmd/gui
