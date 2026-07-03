@@ -14,7 +14,7 @@ This document outlines the architectural rules, coding conventions, and workflow
 - **Commits:**
   - Commit each discrete change separately rather than bundling them into a single commit.
   - Do NOT use Conventional Commits or semantic commit formats. Provide clear, descriptive, non-semantic commit messages.
-  - Do NOT use emojis in commit messages.
+  - **Strict No-Emoji Rule:** Absolutely do NOT use emojis anywhere in commit messages, pull request titles, or branch name prefixes. This rule must be strictly adhered to without exception.
   - Use fixup commits when making subsequent edits to existing code.
   - Do not create pull requests (PRs) when submitting code; commit and push changes directly to the branch.
 - **Dependencies:**
