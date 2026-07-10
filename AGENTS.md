@@ -4,6 +4,7 @@ This document outlines the architectural rules, coding conventions, and workflow
 
 ## General Guidelines & Workflow
 
+- **Agent Documentation:** Always keep this `AGENTS.md` file updated with any new context, workflows, or instructions so that future agents don't have to be explicitly asked to do it.
 - **Version Bumping:** The application's version is tracked in a plain text file named `VERSION` located at `internal/constants/VERSION`. Always keep this file updated so you don't have to be explicitly asked to do it. The version string is embedded into Go via `internal/constants/version.go` and exposed as `constants.Version`.
 - **Workflow & Validation:**
   - Run tests after each change and before committing. Review GitHub Actions workflows to understand the testing strategy and mimic the commands locally to anticipate possible failures.

@@ -84,9 +84,14 @@ jobs:
         ./webcamtimelapse-cli-${{ matrix.os }} -url https://picsum.photos/800/600.jpg -frames 1 -interval 1 -filename test.mp4
         file test.mp4 | grep -i "MP4"
     - name: Verify CLI version
+      shell: bash
       run: |
         EXPECTED_VERSION=$(cat internal/constants/VERSION | xargs)
-        CLI_VERSION=$(./webcamtimelapse-cli-${{ matrix.os }} -version)
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          CLI_VERSION=$(./webcamtimelapse-cli-${{ matrix.os }}.exe -version)
+        else
+          CLI_VERSION=$(./webcamtimelapse-cli-${{ matrix.os }} -version)
+        fi
         if [ "$CLI_VERSION" != "$EXPECTED_VERSION" ]; then
           echo "Error: CLI version ($CLI_VERSION) does not match VERSION file ($EXPECTED_VERSION)"
           exit 1
