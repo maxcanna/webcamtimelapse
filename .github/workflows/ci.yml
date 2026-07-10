@@ -23,8 +23,8 @@ jobs:
           fetch-depth: 0
       - name: Check version bump
         run: |
-          OLD_VERSION=$(git show origin/master:VERSION) || OLD_VERSION="0.0.0"
-          NEW_VERSION=$(cat VERSION)
+          OLD_VERSION=$(git show origin/master:internal/constants/VERSION) || OLD_VERSION="0.0.0"
+          NEW_VERSION=$(cat internal/constants/VERSION)
           if [ "$(printf '%s\n' "$OLD_VERSION" "$NEW_VERSION" | sort -V | head -n1)" = "$OLD_VERSION" ] && [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
             echo "Version increased from $OLD_VERSION to $NEW_VERSION."
           else
@@ -81,8 +81,17 @@ jobs:
       run: go build -o webcamtimelapse-cli-${{ matrix.os }} ./cmd/cli
     - name: Verify CLI video generation
       run: |
-        ./webcamtimelapse-cli-${{ matrix.os }} -url https://httpbin.org/image/jpeg -frames 1 -interval 1 -filename test.mp4
+        ./webcamtimelapse-cli-${{ matrix.os }} -url https://picsum.photos/800/600.jpg -frames 1 -interval 1 -filename test.mp4
         file test.mp4 | grep -i "MP4"
+    - name: Verify CLI version
+      run: |
+        EXPECTED_VERSION=$(cat internal/constants/VERSION | xargs)
+        CLI_VERSION=$(./webcamtimelapse-cli-${{ matrix.os }} -version)
+        if [ "$CLI_VERSION" != "$EXPECTED_VERSION" ]; then
+          echo "Error: CLI version ($CLI_VERSION) does not match VERSION file ($EXPECTED_VERSION)"
+          exit 1
+        fi
+        echo "CLI version matches VERSION file: $CLI_VERSION"
     - name: Build GUI
       run: go build -o webcamtimelapse-gui-${{ matrix.os }} ./cmd/gui
     - name: Adhoc sign on macOS

@@ -4,7 +4,7 @@ This document outlines the architectural rules, coding conventions, and workflow
 
 ## General Guidelines & Workflow
 
-- **Version Bumping:** The application's version is tracked in a plain text file named `VERSION` at the root of the repository. Always update this file when bumping the application version.
+- **Version Bumping:** The application's version is tracked in a plain text file named `VERSION` located at `internal/constants/VERSION`. Always keep this file updated so you don't have to be explicitly asked to do it. The version string is embedded into Go via `internal/constants/version.go` and exposed as `constants.Version`.
 - **Workflow & Validation:**
   - Run tests after each change and before committing. Review GitHub Actions workflows to understand the testing strategy and mimic the commands locally to anticipate possible failures.
   - Build the application locally to validate your changes:

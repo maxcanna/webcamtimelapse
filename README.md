@@ -46,6 +46,7 @@ As shown in help there are several options available:
 * `-filename` Output file name
 * `-fps` FPS of generated video
 * `-quality` Video quality (0.0 to 1.0)
+* `-version` Print application version and exit
 
 
 ##### GUI

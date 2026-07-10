@@ -15,6 +15,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 
+	"go.massi.dev/webcamtimelapse/internal/constants"
 	"go.massi.dev/webcamtimelapse/internal/runner"
 )
 
@@ -180,7 +181,9 @@ func main() {
 		Name: "WebCamTimeLapse",
 	})
 	a := app.NewWithID("dev.massi.webcamtimelapse")
-	w := a.NewWindow("WebCamTimeLapse")
+
+	windowTitle := fmt.Sprintf("WebCamTimeLapse %s", constants.Version)
+	w := a.NewWindow(windowTitle)
 	w.SetMainMenu(fyne.NewMainMenu(
 		fyne.NewMenu("WebCamTimeLapse"),
 	))
