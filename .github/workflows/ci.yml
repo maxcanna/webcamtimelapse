@@ -87,11 +87,7 @@ jobs:
       shell: bash
       run: |
         EXPECTED_VERSION=$(cat internal/constants/VERSION | xargs)
-        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          CLI_VERSION=$(./webcamtimelapse-cli-${{ matrix.os }}.exe -version)
-        else
-          CLI_VERSION=$(./webcamtimelapse-cli-${{ matrix.os }} -version)
-        fi
+        CLI_VERSION=$(./webcamtimelapse-cli-${{ matrix.os }} -version)
         if [ "$CLI_VERSION" != "$EXPECTED_VERSION" ]; then
           echo "Error: CLI version ($CLI_VERSION) does not match VERSION file ($EXPECTED_VERSION)"
           exit 1
