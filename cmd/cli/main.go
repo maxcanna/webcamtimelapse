@@ -13,6 +13,7 @@ import (
 
 	"github.com/schollz/progressbar/v3"
 
+	"go.massi.dev/webcamtimelapse/internal/constants"
 	"go.massi.dev/webcamtimelapse/internal/runner"
 )
 
@@ -21,6 +22,7 @@ func main() {
 	var interval, frames, fps int
 	var filename string
 	var quality float64
+	var printVersion bool
 
 	flag.StringVar(&url, "url", "", "Webcam image URL")
 	flag.IntVar(&interval, "interval", 120, "Interval between captures in seconds")
@@ -28,10 +30,16 @@ func main() {
 	flag.StringVar(&filename, "filename", "", "Output file name (.mp4)")
 	flag.IntVar(&fps, "fps", 30, "FPS of generated video")
 	flag.Float64Var(&quality, "quality", 1.0, "Video quality (0.0 to 1.0)")
+	flag.BoolVar(&printVersion, "version", false, "Print application version and exit")
 	flag.Parse()
 
+	if printVersion {
+		fmt.Println(constants.Version)
+		os.Exit(0)
+	}
+
 	if url == "" {
-		slog.Error("Usage: webcamtimelapse-cli -url URL [-interval 120] [-frames 0] [-filename output.mp4] [-fps 30] [-quality 1.0]")
+		slog.Error("Usage: webcamtimelapse-cli -url URL [-interval 120] [-frames 0] [-filename output.mp4] [-fps 30] [-quality 1.0] [-version]")
 		os.Exit(1)
 	}
 

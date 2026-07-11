@@ -23,8 +23,8 @@ jobs:
           # Fetch the base branch to compare against
           git fetch origin ${{ github.base_ref }}
 
-          OLD_VERSION=$(git show origin/${{ github.base_ref }}:VERSION)
-          NEW_VERSION=$(cat VERSION)
+          OLD_VERSION=$(git show origin/${{ github.base_ref }}:internal/constants/VERSION 2>/dev/null || git show origin/${{ github.base_ref }}:VERSION)
+          NEW_VERSION=$(cat internal/constants/VERSION)
 
           if [ "$(printf '%s\n' "$OLD_VERSION" "$NEW_VERSION" | sort -V | head -n1)" = "$OLD_VERSION" ] && [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
             echo "Version has correctly been increased from $OLD_VERSION to $NEW_VERSION."
@@ -40,10 +40,10 @@ jobs:
 
             # Bump patch version without creating a git tag
             IFS='.' read -r major minor patch <<< "$OLD_VERSION"
-            echo "$major.$minor.$((patch + 1))" > VERSION
+            echo "$major.$minor.$((patch + 1))" > internal/constants/VERSION
 
             # Commit the change
-            git add VERSION
+            git add internal/constants/VERSION
             git commit -m "Bump version"
 
             # Push changes back to the PR branch
