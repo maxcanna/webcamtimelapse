@@ -73,7 +73,7 @@ func showCalculatorDialog(w fyne.Window, intervalEntry, fpsEntry, framesEntry *w
 		return i, f, n
 	}
 
-	calcIntervalEntry.OnChanged = func(s string) {
+	handleCalcChange := func(s string) {
 		if isUpdating {
 			return
 		}
@@ -83,25 +83,9 @@ func showCalculatorDialog(w fyne.Window, intervalEntry, fpsEntry, framesEntry *w
 		updateFromN(n, i, f)
 	}
 
-	calcFpsEntry.OnChanged = func(s string) {
-		if isUpdating {
-			return
-		}
-		isUpdating = true
-		defer func() { isUpdating = false }()
-		i, f, n := getVals()
-		updateFromN(n, i, f)
-	}
-
-	calcFramesEntry.OnChanged = func(s string) {
-		if isUpdating {
-			return
-		}
-		isUpdating = true
-		defer func() { isUpdating = false }()
-		i, f, n := getVals()
-		updateFromN(n, i, f)
-	}
+	calcIntervalEntry.OnChanged = handleCalcChange
+	calcFpsEntry.OnChanged = handleCalcChange
+	calcFramesEntry.OnChanged = handleCalcChange
 
 	captureEntry.OnChanged = func(s string) {
 		if isUpdating {
