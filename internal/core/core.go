@@ -26,6 +26,8 @@ type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
+var maxQualityJPEGOptions = &jpeg.Options{Quality: 100}
+
 // FrameContext holds the state for a time-lapse capture session.
 type FrameContext struct {
 	TempDir  string
@@ -129,7 +131,7 @@ func (fc *FrameContext) FetchAndSaveFrame(ctx context.Context, url string, frame
 	}
 	defer func() { _ = outFile.Close() }()
 
-	if err = jpeg.Encode(outFile, m, &jpeg.Options{Quality: 100}); err != nil {
+	if err = jpeg.Encode(outFile, m, maxQualityJPEGOptions); err != nil {
 		return "", fmt.Errorf("failed to encode jpeg: %w", err)
 	}
 
