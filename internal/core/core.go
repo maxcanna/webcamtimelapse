@@ -30,10 +30,9 @@ var maxQualityJPEGOptions = &jpeg.Options{Quality: 100}
 
 // FrameContext holds the state for a time-lapse capture session.
 type FrameContext struct {
-	TempDir  string
-	client   HTTPClient   // shared across frames for connection pooling
-	labelSrc image.Image  // uniform image reused across frames
-	drawer   *font.Drawer // reused font drawer to prevent allocations
+	TempDir string
+	client  HTTPClient   // shared across frames for connection pooling
+	drawer  *font.Drawer // reused font drawer to prevent allocations
 }
 
 // NewFrameContext creates a temporary directory for frames and a reusable HTTP client.
@@ -44,12 +43,12 @@ func NewFrameContext() (*FrameContext, error) {
 	}
 	labelSrc := image.NewUniform(color.RGBA{R: 255, A: 255})
 	fc := &FrameContext{
-		TempDir:  tmpDir,
-		client:   &http.Client{Timeout: 10 * time.Second},
-		labelSrc: labelSrc,
+		TempDir: tmpDir,
+		client:  &http.Client{Timeout: 10 * time.Second},
 		drawer: &font.Drawer{
 			Src:  labelSrc,
 			Face: basicfont.Face7x13,
+			Dot:  fixed.Point26_6{X: fixed.I(10), Y: fixed.I(30)},
 		},
 	}
 	// Safety net: if Cleanup() is never called (e.g. panic path), the GC will
