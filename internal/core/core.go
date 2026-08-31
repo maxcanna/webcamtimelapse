@@ -44,7 +44,7 @@ func NewFrameContext() (*FrameContext, error) {
 	labelSrc := image.NewUniform(color.RGBA{R: 255, A: 255})
 	fc := &FrameContext{
 		TempDir: tmpDir,
-		client:  &http.Client{Timeout: 10 * time.Second},
+		client:  &http.Client{Timeout: 30 * time.Second},
 		drawer: &font.Drawer{
 			Src:  labelSrc,
 			Face: basicfont.Face7x13,
