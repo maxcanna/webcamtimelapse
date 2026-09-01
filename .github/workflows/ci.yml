@@ -44,7 +44,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.26.5'
+        go-version: '1.27.0'
         cache: false
     - name: Lint
       uses: golangci/golangci-lint-action@v9
@@ -70,7 +70,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.26.5'
+        go-version: '1.27.0'
         cache: false
     - name: Install Linux dependencies
       if: matrix.os == 'ubuntu-latest'
@@ -81,7 +81,7 @@ jobs:
       run: go build -o webcamtimelapse-cli-${{ matrix.os }} ./cmd/cli
     - name: Verify CLI video generation
       run: |
-        ./webcamtimelapse-cli-${{ matrix.os }} -url https://picsum.photos/800/600.jpg -frames 1 -interval 1 -filename test.mp4
+        ./webcamtimelapse-cli-${{ matrix.os }} -url https://placehold.co/800x600.jpg -frames 1 -interval 1 -filename test.mp4
         file test.mp4 | grep -i "MP4"
     - name: Verify CLI version
       shell: bash
