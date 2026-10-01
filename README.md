@@ -6,7 +6,7 @@ Easily create time-lapse videos from webcam images. This project has been fully 
 
 #### Build
 
-You need Go 1.27.0 installed on your machine.
+You need Go 1.27.1 installed on your machine.
 
 **Build CLI:**
 ```bash
