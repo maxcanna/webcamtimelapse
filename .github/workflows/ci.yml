@@ -44,15 +44,15 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.27.1'
+        go-version: '1.27.3'
         cache: false
     - name: Lint
       uses: golangci/golangci-lint-action@v9
       with:
-        version: latest
+        version: v2.15.0
         args: --timeout=5m
     - name: Install Gosec
-      run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+      run: go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
     - name: Gosec
       run: gosec ./...
     - name: Tests
@@ -70,7 +70,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.27.1'
+        go-version: '1.27.3'
         cache: false
     - name: Install Linux dependencies
       if: matrix.os == 'ubuntu-latest'
