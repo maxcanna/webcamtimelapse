@@ -58,7 +58,7 @@ jobs:
         version: v2.15.0
         args: --timeout=5m
     - name: Gosec
-      uses: securego/gosec@v2.30.0
+      uses: securego/gosec@4504603eddc5a91a7b7713932d6d1d3792126103 # v2.30.0 plus the fix of the action image tag
       env:
         GOTOOLCHAIN: auto
       with:
