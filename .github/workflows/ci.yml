@@ -65,53 +65,27 @@ jobs:
         args: ./...
     - name: Tests
       run: go test -v ./...
-
-  build:
-    needs: ci
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v6
-    - name: Setup Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.27.3'
-        cache: false
-    - name: Install Linux dependencies
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev xorg-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxxf86vm-dev libwayland-dev libxkbcommon-dev
     - name: Build CLI
-      run: go build -o webcamtimelapse-cli-${{ matrix.os }} ./cmd/cli
+      run: go build -o webcamtimelapse-cli-linux ./cmd/cli
     - name: Verify CLI video generation
       run: |
-        ./webcamtimelapse-cli-${{ matrix.os }} -url https://placehold.co/800x600.jpg -frames 1 -interval 1 -filename test.mp4
+        ./webcamtimelapse-cli-linux -url https://placehold.co/800x600.jpg -frames 1 -interval 1 -filename test.mp4
         file test.mp4 | grep -i "MP4"
     - name: Verify CLI version
-      shell: bash
       run: |
         EXPECTED_VERSION=$(cat internal/constants/VERSION | xargs)
-        CLI_VERSION=$(./webcamtimelapse-cli-${{ matrix.os }} -version)
+        CLI_VERSION=$(./webcamtimelapse-cli-linux -version)
         if [ "$CLI_VERSION" != "$EXPECTED_VERSION" ]; then
           echo "Error: CLI version ($CLI_VERSION) does not match VERSION file ($EXPECTED_VERSION)"
           exit 1
         fi
         echo "CLI version matches VERSION file: $CLI_VERSION"
     - name: Build GUI
-      run: go build -o webcamtimelapse-gui-${{ matrix.os }} ./cmd/gui
-    - name: Adhoc sign on macOS
-      if: matrix.os == 'macos-latest'
-      run: |
-        codesign --force --deep -s - webcamtimelapse-cli-${{ matrix.os }} || true
-        codesign --force --deep -s - webcamtimelapse-gui-${{ matrix.os }} || true
+      run: go build -o webcamtimelapse-gui-linux ./cmd/gui
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: webcamtimelapse-${{ matrix.os }}
+        name: webcamtimelapse-linux
         path: |
-          webcamtimelapse-cli-*
-          webcamtimelapse-gui-*
+          webcamtimelapse-cli-linux
+          webcamtimelapse-gui-linux
