@@ -43,6 +43,10 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v6
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev xorg-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxxf86vm-dev libwayland-dev libxkbcommon-dev
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
