@@ -11,8 +11,14 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
     - name: Check if there are fixup commits
-      run: git log --pretty=format:%s origin/master.. | xargs | grep -v fixup
+      run: |
+        if git log --format=%s origin/master..HEAD | grep -E '^(fixup|squash|amend)! '; then
+          echo "Error: the commits above must be autosquashed before merging."
+          exit 1
+        fi
 
   version:
     runs-on: ubuntu-latest
@@ -32,15 +38,11 @@ jobs:
             exit 1
           fi
 
-  test:
+  ci:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
       uses: actions/checkout@v6
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev xorg-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxxf86vm-dev libwayland-dev libxkbcommon-dev
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
@@ -51,15 +53,17 @@ jobs:
       with:
         version: v2.15.0
         args: --timeout=5m
-    - name: Install Gosec
-      run: go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
     - name: Gosec
-      run: gosec ./...
+      uses: securego/gosec@v2.30.0
+      env:
+        GOTOOLCHAIN: auto
+      with:
+        args: ./...
     - name: Tests
       run: go test -v ./...
 
   build:
-    needs: test
+    needs: ci
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
